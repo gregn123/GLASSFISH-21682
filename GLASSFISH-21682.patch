@@ -1,0 +1,59 @@
+
+Index: main/appserver/connectors/connectors-runtime/src/main/java/com/sun/enterprise/resource/poolConnectionPool.java
+=====================================================================================================================
+--- ConnectorService.java       (revision 57363)
++++ ConnectorService.java       (working copy)
+@@ -722,13 +722,13 @@
+ 
+                 if (matchConnection(h, alloc)) {
+ 
+                     boolean isValid = isConnectionValid(h, alloc);
+                     if (h.hasConnectionErrorOccurred() || !isValid) {
+                         if (failAllConnections) {
+-                            createSingleResourceAndAdjustPool(alloc, spec);
++                            result = createSingleResourceAndAdjustPool(alloc, spec);
+                             //no need to match since the resource is created with the allocator of caller.
+                             break;
+                         } else {
+                             ds.removeResource(h);
+                             //resource is invalid, continue iteration.
+                             continue;
+@@ -876,16 +876,17 @@
+         ResourceHandle handle = ds.getResource();
+         if (handle != null) {
+             ds.removeResource(handle);
+         }
+ 
+         ResourceHandle result = getNewResource(alloc);
+-        if (result != null) {
+-            alloc.fillInResourceObjects(result);
+-            result.getResourceState().setBusy(true);
+-        }
++        // The code below has been commented-out because it is effectively being run AGAIN by the caller
++        //if (result != null) {
++        //   alloc.fillInResourceObjects(result);
++        //   result.getResourceState().setBusy(true);
++        //}
+ 
+         return result;
+     }
+ 
+ 
+     /**
+@@ -1243,13 +1244,15 @@
+         if (poolLifeCycleListener != null) {
+             poolLifeCycleListener.connectionValidationFailed(1);
+         }
+     }
+ 
+     private ResourceHandle getNewResource(ResourceAllocator alloc) throws PoolingException {
+-        ds.addResource(alloc, 1);
++        // The wrapper method addResource() needs to be called instead of ds.addResource(), so that NumConnFree gets incremented after creating the new resource
++        //ds.addResource(alloc, 1);
++        addResource(alloc);
+         return ds.getResource();
+     }
+ 
+ 
+     private ResourceState getResourceState(ResourceHandle h) {
+         return h.getResourceState();
